@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  PartnerScout — ATS Partner-Akquise-Cockpit
+  © Pitt Petruschke (PiP) · Einzelfirma Pitt Petruschke Propfarming
+  Market-Developer-Akquise für Algo Trading Space (ATS)
+  Single-File, localStorage, versioniert. Signiert: Pitt Petruschke (PiP)
+  ============================================================================
+-->
+<html lang="de" data-author="Pitt Petruschke (PiP)">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Pitt Petruschke (PiP)">
+<meta name="application-name" content="PartnerScout">
+<meta name="description" content="ATS Partner-Akquise-Cockpit — Multiplikatoren finden, scoren, ansprechen, tracken.">
+<title>PartnerScout · ATS Partner-Akquise</title>
+<style>
+  :root{
+    --bg:#0c1116; --bg2:#11181f; --panel:#151d26; --panel2:#1a232e;
+    --line:#232f3c; --line2:#2c3a49;
+    --txt:#e6edf3; --mut:#8b9bab; --mut2:#5f6f7e;
+    --teal:#19E3C4; --teal-d:#14B8A6; --teal-dim:rgba(25,227,196,.12);
+    --blue:#4aa3ff; --amber:#f5b13d; --green:#3ddc84; --red:#ff6b6b; --purple:#b48cff;
+    --radius:12px; --radius-s:8px;
+    --shadow:0 6px 24px rgba(0,0,0,.35);
+    --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:radial-gradient(1200px 600px at 80% -10%,#16222e 0,var(--bg) 55%);color:var(--txt);font-family:var(--font);font-size:14px;line-height:1.45}
+  a{color:var(--teal);text-decoration:none}
+  button{font-family:inherit}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ---- Topbar ---- */
+  header{display:flex;align-items:center;gap:18px;padding:14px 22px;border-bottom:1px solid var(--line);background:rgba(12,17,22,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:30;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:11px;min-width:200px}
+  .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--teal-d));display:grid;place-items:center;color:#062019;font-weight:800;font-size:19px;box-shadow:0 0 18px rgba(25,227,196,.4)}
+  .brand h1{font-size:16px;margin:0;letter-spacing:.3px;font-weight:700}
+  .brand .sub{font-size:11px;color:var(--mut);letter-spacing:.4px}
+  .ver{font-size:10px;font-weight:700;color:var(--teal);border:1px solid var(--teal);border-radius:20px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+  .kpis{display:flex;gap:10px;flex:1;flex-wrap:wrap;justify-content:center}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-s);padding:7px 13px;min-width:78px;text-align:center}
+  .kpi .n{font-size:18px;font-weight:800;line-height:1}
+  .kpi .l{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+  .kpi.acc .n{color:var(--teal)}
+  .toolbtns{display:flex;gap:8px}
+  .btn{background:var(--panel2);border:1px solid var(--line2);color:var(--txt);padding:8px 13px;border-radius:var(--radius-s);cursor:pointer;font-size:13px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{border-color:var(--teal);color:var(--teal)}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#062019}
+  .btn.primary:hover{background:var(--teal-d);color:#062019}
+  .btn.ghost{background:transparent}
+  .btn.danger:hover{border-color:var(--red);color:var(--red)}
+  .btn.sm{padding:5px 9px;font-size:12px}
+
+  /* ---- Tabs ---- */
+  nav.tabs{display:flex;gap:4px;padding:0 22px;border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:69px;z-index:25;overflow-x:auto}
+  nav.tabs button{background:none;border:none;color:var(--mut);padding:13px 16px;cursor:pointer;font-size:13.5px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+  nav.tabs button:hover{color:var(--txt)}
+  nav.tabs button.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+  main{padding:22px}
+  .view{display:none}
+  .view.active{display:block}
+  .row{display:flex;gap:14px;flex-wrap:wrap}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  h2.sec{font-size:15px;margin:0 0 4px;font-weight:700}
+  .hint{color:var(--mut);font-size:12.5px;margin:0 0 14px}
+
+  /* ---- Kanban ---- */
+  .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;align-items:flex-start}
+  .col{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);min-width:228px;max-width:228px;flex:0 0 228px;display:flex;flex-direction:column;max-height:calc(100vh - 230px)}
+  .col-h{padding:11px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);border-radius:var(--radius) var(--radius) 0 0}
+  .col-h .t{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+  .col-h .dot{width:8px;height:8px;border-radius:50%}
+  .col-h .c{font-size:11px;color:var(--mut);background:var(--panel2);border-radius:10px;padding:1px 7px}
+  .col-body{padding:9px;overflow-y:auto;flex:1;min-height:60px}
+  .col-body.drag-over{background:var(--teal-dim);outline:1px dashed var(--teal)}
+  .card{background:var(--panel2);border:1px solid var(--line2);border-radius:var(--radius-s);padding:10px;margin-bottom:9px;cursor:grab;transition:.12s}
+  .card:hover{border-color:var(--teal);transform:translateY(-1px)}
+  .card.dragging{opacity:.4}
+  .card .c-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+  .card .nm{font-weight:700;font-size:13px;line-height:1.2;word-break:break-word}
+  .card .meta{font-size:11px;color:var(--mut);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .pill{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;display:inline-flex;align-items:center;gap:3px}
+  .pill.tg{background:rgba(74,163,255,.15);color:var(--blue)}
+  .pill.yt{background:rgba(255,107,107,.15);color:var(--red)}
+  .pill.ig{background:rgba(180,140,255,.15);color:var(--purple)}
+  .pill.web{background:rgba(139,155,171,.15);color:var(--mut)}
+  .pill.other{background:rgba(139,155,171,.15);color:var(--mut)}
+  .score{font-size:12px;font-weight:800;padding:2px 8px;border-radius:10px}
+  .touchdots{display:flex;gap:3px}
+  .touchdots i{width:6px;height:6px;border-radius:50%;background:var(--line2)}
+  .touchdots i.on{background:var(--teal)}
+
+  /* ---- Table ---- */
+  .filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  select,input[type=text],input[type=number],input[type=url],textarea{background:var(--bg2);border:1px solid var(--line2);color:var(--txt);border-radius:var(--radius-s);padding:8px 10px;font-size:13px;font-family:inherit;outline:none}
+  select:focus,input:focus,textarea:focus{border-color:var(--teal)}
+  input::placeholder,textarea::placeholder{color:var(--mut2)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap}
+  th:hover{color:var(--teal)}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:var(--panel2)}
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius)}
+  .badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px}
+
+  /* ---- Fit weights ---- */
+  .wgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:6px}
+  .wrow{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .wrow label{flex:0 0 150px;font-size:13px}
+  .wrow input[type=range]{flex:1;accent-color:var(--teal)}
+  .wrow .v{flex:0 0 38px;text-align:right;font-weight:700;color:var(--teal)}
+
+  /* ---- Playbook / Pitch ---- */
+  .tmpl{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-bottom:13px}
+  .tmpl-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+  .tmpl-h .nm{font-weight:700;font-size:14px}
+  textarea{width:100%;min-height:110px;resize:vertical;line-height:1.5}
+  .varhelp{font-size:11.5px;color:var(--mut);margin-top:7px}
+  .varhelp code{background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;color:var(--teal);font-size:11px}
+
+  /* ---- Modal ---- */
+  .overlay{position:fixed;inset:0;background:rgba(5,8,11,.72);backdrop-filter:blur(3px);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+  .overlay.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);width:100%;max-width:620px;box-shadow:var(--shadow)}
+  .modal-h{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .modal-h h3{margin:0;font-size:16px}
+  .modal-b{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .modal-b .full{grid-column:1/-1}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  .modal-f{padding:15px 20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .close-x{background:none;border:none;color:var(--mut);font-size:22px;cursor:pointer;line-height:1}
+  .close-x:hover{color:var(--red)}
+
+  /* dropzone */
+  #drop{position:fixed;inset:0;background:rgba(25,227,196,.08);border:3px dashed var(--teal);z-index:90;display:none;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--teal);flex-direction:column;gap:10px}
+  #drop.show{display:flex}
+
+  .empty{text-align:center;color:var(--mut);padding:50px 20px}
+  .empty .big{font-size:15px;color:var(--txt);font-weight:600;margin-bottom:6px}
+  footer{padding:18px 22px;color:var(--mut2);font-size:11.5px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--teal);color:#062019;font-weight:700;padding:11px 20px;border-radius:24px;z-index:100;transition:.3s;box-shadow:var(--shadow);opacity:0}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:var(--radius-s);overflow:hidden}
+  .seg button{background:var(--bg2);border:none;color:var(--mut);padding:7px 12px;cursor:pointer;font-size:12.5px;font-weight:600}
+  .seg button.active{background:var(--teal);color:#062019}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">P</div>
+    <div>
+      <h1>PartnerScout <span class="ver" id="verBadge">v1.0.0</span></h1>
+      <div class="sub">ATS Partner-Akquise · Market Developer DE</div>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="toolbtns">
+    <button class="btn ghost sm" onclick="exportData('json')">⬇ JSON</button>
+    <button class="btn ghost sm" onclick="exportData('csv')">⬇ CSV</button>
+    <button class="btn primary sm" onclick="addCandidate()">+ Kandidat</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-v="board" class="active">📋 Pipeline-Board</button>
+  <button data-v="cands">🗂 Kandidaten</button>
+  <button data-v="score">🎯 Fit-Score</button>
+  <button data-v="play">✉️ Playbook</button>
+  <button data-v="pitch">📣 Pitch / Angebot</button>
+</nav>
+
+<main>
+  <!-- BOARD -->
+  <section class="view active" id="view-board">
+    <div class="board" id="board"></div>
+  </section>
+
+  <!-- CANDIDATES -->
+  <section class="view" id="view-cands">
+    <div class="filters">
+      <input type="text" id="fSearch" placeholder="🔍 Suche Name/Handle/Nische…" oninput="renderTable()" style="min-width:220px">
+      <select id="fPlatform" onchange="renderTable()"><option value="">Alle Plattformen</option><option value="telegram">Telegram</option><option value="youtube">YouTube</option><option value="instagram">Instagram</option><option value="web">Web/Blog</option><option value="other">Andere</option></select>
+      <select id="fStatus" onchange="renderTable()"><option value="">Alle Status</option></select>
+      <select id="fLang" onchange="renderTable()"><option value="">Alle Sprachen</option><option value="de">DE</option><option value="en">EN</option><option value="other">Andere</option></select>
+      <select id="fScore" onchange="renderTable()"><option value="0">Score: alle</option><option value="80">≥ 80</option><option value="65">≥ 65</option><option value="50">≥ 50</option></select>
+      <span style="flex:1"></span>
+      <button class="btn sm" onclick="addCandidate()">+ Kandidat</button>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl">
+        <thead><tr>
+          <th data-k="name">Name ▾</th><th data-k="platform">Plattform</th><th data-k="reach">Reichweite</th>
+          <th data-k="language">Spr.</th><th data-k="niche">Nische</th><th data-k="fit">Fit ▾</th>
+          <th data-k="status">Status</th><th data-k="touch">Touch</th><th data-k="source">Quelle</th>
+        </tr></thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+    <div id="tblEmpty" class="empty" style="display:none">
+      <div class="big">Noch keine Kandidaten</div>
+      Lege manuell an (+ Kandidat) oder ziehe einen Import-Batch (CSV/JSON) per Drag&Drop ins Fenster.
+    </div>
+  </section>
+
+  <!-- FIT SCORE -->
+  <section class="view" id="view-score">
+    <div class="panel" style="max-width:760px">
+      <h2 class="sec">Fit-Score-Gewichtung</h2>
+      <p class="hint">Bestimmt, wie Kandidaten priorisiert werden (0–100). Gewichte frei justierbar — Neuberechnung läuft live über alle Kandidaten.</p>
+      <div id="weights"></div>
+      <div style="margin-top:14px;display:flex;gap:10px">
+        <button class="btn sm" onclick="resetWeights()">↺ Standard</button>
+        <button class="btn primary sm" onclick="saveWeights()">✓ Speichern & neu berechnen</button>
+      </div>
+      <p class="varhelp" style="margin-top:16px">
+        <b>Faktoren je Kandidat:</b> Reichweite (log-skaliert) · Nischen-Match (Forex/Algo, 0–100) ·
+        Sprache (DE 100 / EN 70 / andere 40) · Aktivität (niedrig 40 / mittel 70 / hoch 100) ·
+        Monetarisierung (keine 40 / etwas 70 / stark 100).
+      </p>
+    </div>
+  </section>
+
+  <!-- PLAYBOOK -->
+  <section class="view" id="view-play">
+    <div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><h2 class="sec">Outreach-Playbook</h2>
+        <p class="hint" style="margin:0">Vorlagen je Profil, Kanal & Touch. Merge-Variablen werden beim „Kopieren" aus der Kandidaten-Karte gefüllt.</p></div>
+        <button class="btn sm" onclick="addTemplate()">+ Vorlage</button>
+      </div>
+      <p class="varhelp" style="margin:10px 0 16px">
+        Variablen: <code>{name}</code> <code>{kanal}</code> <code>{reichweite}</code>
+        <code>{hook}</code> <code>{deal}</code> <code>{link}</code> · Touch 1 = Erstkontakt, 2 = Follow-up, 3 = Last Call
+      </p>
+      <div id="templates"></div>
+    </div>
+  </section>
+
+  <!-- PITCH -->
+  <section class="view" id="view-pitch">
+    <div class="panel" style="max-width:820px">
+      <h2 class="sec">Angebots-One-Pager</h2>
+      <p class="hint">Das schickst du Interessenten nach dem Erstkontakt. <b>Deal-Text</b> wird auch als <code>{deal}</code> ins Playbook gemerged — sobald du die Ökonomie mit ATS finalisiert hast, hier eintragen.</p>
+      <div class="fld" style="margin-bottom:13px"><label>Deal-Text (Beteiligung)</label><input type="text" id="pDeal"></div>
+      <div class="fld" style="margin-bottom:13px"><label>ATS-Deck-Link</label><input type="url" id="pDeck"></div>
+      <div class="fld" style="margin-bottom:13px"><label>One-Pager (Volltext)</label><textarea id="pBody" style="min-height:300px"></textarea></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn primary sm" onclick="savePitch()">✓ Speichern</button>
+        <button class="btn sm" onclick="copyPitch()">⧉ One-Pager kopieren</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>PartnerScout v<span id="verFoot"></span> · ATS Market-Developer-Akquise · localStorage, kein Server</div>
+  <div>© <span id="yr"></span> Pitt Petruschke (PiP) · Propfarming</div>
+</footer>
+
+<!-- candidate modal -->
+<div class="overlay" id="ov">
+  <div class="modal">
+    <div class="modal-h"><h3 id="mTitle">Kandidat</h3><button class="close-x" onclick="closeModal()">×</button></div>
+    <div class="modal-b">
+      <div class="fld"><label>Name / Channel</label><input type="text" id="mName"></div>
+      <div class="fld"><label>Handle / @</label><input type="text" id="mHandle"></div>
+      <div class="fld"><label>Plattform</label><select id="mPlatform"><option value="telegram">Telegram</option><option value="youtube">YouTube</option><option value="instagram">Instagram</option><option value="web">Web/Blog</option><option value="other">Andere</option></select></div>
+      <div class="fld"><label>URL</label><input type="url" id="mUrl" placeholder="https://"></div>
+      <div class="fld"><label>Reichweite (Zahl)</label><input type="number" id="mReach" min="0" placeholder="z.B. 12000"></div>
+      <div class="fld"><label>Sprache</label><select id="mLang"><option value="de">DE</option><option value="en">EN</option><option value="other">Andere</option></select></div>
+      <div class="fld"><label>Nische</label><input type="text" id="mNiche" placeholder="Forex Signals / Algo / EA …"></div>
+      <div class="fld"><label>Nischen-Match (0–100)</label><input type="number" id="mNicheM" min="0" max="100" value="70"></div>
+      <div class="fld"><label>Aktivität</label><select id="mAct"><option value="low">niedrig</option><option value="med" selected>mittel</option><option value="high">hoch</option></select></div>
+      <div class="fld"><label>Monetarisierung</label><select id="mMon"><option value="none">keine</option><option value="some" selected>etwas</option><option value="strong">stark</option></select></div>
+      <div class="fld"><label>Status</label><select id="mStatus"></select></div>
+      <div class="fld"><label>Touch (0–3)</label><input type="number" id="mTouch" min="0" max="3" value="0"></div>
+      <div class="fld full"><label>Custom-Link (link.algotradingspace.com)</label><input type="url" id="mLink" placeholder="https://link.algotradingspace.com/…"></div>
+      <div class="fld full"><label>Deal / Konditionen</label><input type="text" id="mDeal" placeholder="z.B. 50/50 Revenue-Share"></div>
+      <div class="fld"><label>Quelle</label><input type="text" id="mSource" placeholder="YouTube-Suche / Empfehlung …"></div>
+      <div class="fld"><label>Letzter Kontakt</label><input type="text" id="mLast" placeholder="2026-06-30"></div>
+      <div class="fld full"><label>Notizen</label><textarea id="mNotes" style="min-height:70px"></textarea></div>
+      <div class="fld full" id="outBox" style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px">
+        <label style="margin-bottom:7px">Outreach erzeugen</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="mTmpl" style="flex:1;min-width:180px"></select>
+          <button class="btn sm" onclick="copyOutreach()">⧉ Text kopieren</button>
+          <button class="btn sm" onclick="openChannel()">↗ Kanal öffnen</button>
+        </div>
+        <div id="outPrev" style="margin-top:10px;font-size:12.5px;color:var(--mut);white-space:pre-wrap;max-height:160px;overflow:auto"></div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn danger sm" onclick="deleteCandidate()">🗑 Löschen</button>
+      <div style="display:flex;gap:9px">
+        <button class="btn sm" onclick="closeModal()">Abbrechen</button>
+        <button class="btn primary sm" onclick="saveCandidate()">✓ Speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="drop">📥 Import-Batch loslassen<div style="font-size:13px;font-weight:600;color:var(--mut)">CSV oder JSON — Kandidaten werden dedupliziert ergänzt</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   PartnerScout — App-Kern. Signiert: Pitt Petruschke (PiP)
+   ========================================================================= */
+const PARTNERSCOUT_VERSION='1.0.0';
+const APP={name:'PartnerScout',version:PARTNERSCOUT_VERSION,author:'Pitt Petruschke (PiP)',
+  role:'ATS Market Developer DE',built:'2026-06-30'};
+window.PARTNERSCOUT=APP;
+console.log('%cPartnerScout v'+PARTNERSCOUT_VERSION+' — gebaut für Pitt Petruschke (PiP) 🦅','color:#19E3C4;font-weight:bold');
+
+const LS={cand:'partnerscout_v1_candidates',w:'partnerscout_v1_weights',pitch:'partnerscout_v1_pitch',tmpl:'partnerscout_v1_templates'};
+
+const STATUSES=[
+  {k:'neu',     label:'Neu',         color:'#8b9bab'},
+  {k:'scored',  label:'Scored',      color:'#4aa3ff'},
+  {k:'kontakt', label:'Kontaktiert', color:'#b48cff'},
+  {k:'antwort', label:'Geantwortet', color:'#f5b13d'},
+  {k:'call',    label:'Call',        color:'#19E3C4'},
+  {k:'signed',  label:'Signed',      color:'#3ddc84'},
+  {k:'cold',    label:'Cold',        color:'#5f6f7e'},
+];
+const statusOf=k=>STATUSES.find(s=>s.k===k)||STATUSES[0];
+
+const DEFAULT_WEIGHTS={reach:25,niche:30,language:15,activity:15,monetization:15};
+
+const DEFAULT_PITCH={
+  deal:'50/50 Revenue-Share (laufend) — finalisierung mit ATS offen',
+  deck:'https://hello.algotradingspace.com/market-developer-deck',
+  body:`Algo Trading Space — Partnerprogramm für deine Community
+
+Wer wir sind: Algo Trading Space (ATS) bündelt geprüfte Trading-Roboter (EAs),
+Software-Pakete, einen VIP-Club und Coaching unter einem Dach. Ich bin der
+offizielle Market Developer für den deutschsprachigen Raum.
+
+Was du bekommst:
+• Wiederkehrende Beteiligung an JEDEM Umsatz deiner geworbenen Nutzer
+  (EA-Affiliate, Software-Pakete 703–2.215 €, VIP-Club 49 €/Mt, Coaching 119 €).
+• Deine Konditionen: {deal}
+• Eigener getrackter Custom-Link — volle Transparenz, jede Conversion sichtbar.
+• Fertige, lokalisierte Marketing-Materialien — du musst nichts selbst bauen.
+• Direkter Draht zu mir, kein anonymes Netzwerk.
+
+Warum jetzt: Pro Sprache/Land gibt es nur EINEN Markt-Partner. Der deutsche Markt
+läuft über mich — du sicherst dir früh einen Platz im Sub-Netzwerk, solange die
+besten Plätze frei sind.
+
+Nächster Schritt: 15 Min Call. Ich zeige dir Zahlen, Produkte und wie dein
+Custom-Link in 5 Minuten steht.
+
+Deck: {link}`
+};
+
+/* ---- Default-Playbook: 3 Profile × DE/EN × 3 Touches (Auswahl) ---- */
+const DEFAULT_TEMPLATES=[
+  {id:'t1',nm:'Signal-Channel · Erstkontakt',profile:'Signal/Telegram',channel:'Telegram-DM',lang:'DE',touch:1,
+   body:`Hey {name} 👋
+
+ich verfolge {kanal} ({reichweite} Member) — saubere Arbeit, deine Community passt perfekt zu dem, was ich aufbaue.
+
+Kurz: Ich bin Market Developer für Algo Trading Space (DE) — geprüfte EAs, VIP-Club, Coaching. Ich vergebe gerade ein paar Partner-Plätze an Channel-Betreiber wie dich. Du bekommst {deal} auf jeden Umsatz deiner Leute, eigenen getrackten Link, fertige Materialien.
+
+Macht ein kurzer Call (15 Min) Sinn? Dann zeig ich dir die Zahlen.`},
+  {id:'t2',nm:'Signal-Channel · Follow-up',profile:'Signal/Telegram',channel:'Telegram-DM',lang:'DE',touch:2,
+   body:`Hey {name}, kurzes Follow-up 🙂
+
+Falls untergegangen: Es geht um eine laufende Beteiligung ({deal}) für deine Community — kein einmaliger Affiliate-Klick, sondern wiederkehrend, solange deine Leute aktiv sind.
+
+Ich schick dir gern vorab das 1-Pager-Deck: {link} — passt 15 Min diese Woche?`},
+  {id:'t3',nm:'Signal-Channel · Last Call',profile:'Signal/Telegram',channel:'Telegram-DM',lang:'DE',touch:3,
+   body:`{name}, letzter Anlauf von mir 🤝 — ich will dich nicht zuspammen.
+
+Die Partner-Plätze für DE sind begrenzt (1 Markt = exklusiv). Wenn Beteiligung an deinem Traffic für dich grad nicht passt, alles gut — sag einfach kurz Bescheid, dann hak ich's ab. Wenn doch: ein „ja" reicht und ich richte alles ein.`},
+
+  {id:'t4',nm:'YouTuber · Erstkontakt (Mail)',profile:'YouTuber',channel:'E-Mail',lang:'DE',touch:1,
+   body:`Betreff: Partnerschaft für {kanal} — wiederkehrende Beteiligung
+
+Hi {name},
+
+ich schaue {kanal} ({reichweite} Abonnenten) und dein Publikum ist genau die Zielgruppe für geprüftes Algo-Trading.
+
+Ich bin Market Developer für Algo Trading Space (DE). Ich suche Creator, die ihrer Audience echte Tools (EAs, VIP-Club, Coaching) zeigen — und dafür {deal} auf jeden Umsatz bekommen. Eigener getrackter Link, fertige Materialien, volle Transparenz.
+
+Interesse an einem 15-Min-Call? Deck vorab: {link}
+
+Beste Grüße`},
+  {id:'t5',nm:'YouTuber · Follow-up (Mail)',profile:'YouTuber',channel:'E-Mail',lang:'DE',touch:2,
+   body:`Betreff: Re: Partnerschaft für {kanal}
+
+Hi {name}, kurzes Nachfassen — ich weiß, Postfächer sind voll 🙂
+
+Der Kern: eine wiederkehrende Beteiligung ({deal}), nicht der typische Einmal-Affiliate. Ein einziges Integrations-Video oder ein Link in der Videobeschreibung kann monatlich tragen.
+
+Sag einfach „Zahlen bitte" und ich schick dir konkrete Beispielrechnungen.`},
+
+  {id:'t6',nm:'Educator/Coach · Erstkontakt',profile:'Educator',channel:'E-Mail/DM',lang:'DE',touch:1,
+   body:`Hi {name},
+
+du bildest Trader aus ({kanal}) — dann kennst du das Problem: Teilnehmer wollen nach dem Kurs Tools, die funktionieren. Genau da komme ich rein.
+
+Ich bin Market Developer für Algo Trading Space (DE): geprüfte EAs, VIP-Club, Coaching. Als Partner bekommst du {deal} auf jeden Umsatz deiner Leute — eine saubere, wiederkehrende Zusatzeinnahme neben deinem Kursgeschäft, ohne eigenes Produkt zu bauen.
+
+15 Min Call? Deck: {link}`},
+
+  {id:'t7',nm:'EN · Generic First Touch',profile:'International',channel:'DM/E-Mail',lang:'EN',touch:1,
+   body:`Hey {name} 👋
+
+I follow {kanal} ({reichweite}) — your audience is a perfect fit for what I'm building.
+
+I'm the Market Developer for Algo Trading Space (verified EAs, VIP club, coaching). I'm onboarding a few community partners: you get {deal} on every sale from your people, your own tracked link, ready-made materials, full transparency.
+
+Worth a quick 15-min call? Deck: {link}`},
+];
+
+/* ---------- state ---------- */
+let candidates=load(LS.cand,[]);
+let weights=load(LS.w,{...DEFAULT_WEIGHTS});
+let pitch=load(LS.pitch,{...DEFAULT_PITCH});
+let templates=load(LS.tmpl,JSON.parse(JSON.stringify(DEFAULT_TEMPLATES)));
+let editingId=null;
+let sortKey='fit',sortDir=-1;
+
+function load(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v));}
+function saveAll(){save(LS.cand,candidates);}
+function uid(){return 'c'+Math.random().toString(36).slice(2,9);}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000);}
+
+/* ---------- scoring ---------- */
+function computeScore(c){
+  const reach=Math.max(0,+c.reach||0);
+  const reachScore=Math.min(100,Math.log10(reach+1)/6*100); // 1M => ~100
+  const nicheScore=Math.max(0,Math.min(100,+c.nicheMatch??70));
+  const langScore={de:100,en:70,other:40}[c.language||'de'];
+  const actScore={low:40,med:70,high:100}[c.activity||'med'];
+  const monScore={none:40,some:70,strong:100}[c.monetization||'some'];
+  const w=weights, sum=w.reach+w.niche+w.language+w.activity+w.monetization||1;
+  const total=(reachScore*w.reach+nicheScore*w.niche+langScore*w.language+actScore*w.activity+monScore*w.monetization)/sum;
+  return Math.round(total);
+}
+function scoreColor(s){if(s>=80)return 'rgba(61,220,132,.18);color:#3ddc84';if(s>=65)return 'rgba(25,227,196,.16);color:#19E3C4';if(s>=50)return 'rgba(245,177,61,.16);color:#f5b13d';return 'rgba(139,155,171,.14);color:#8b9bab';}
+function fmtReach(n){n=+n||0;if(n>=1e6)return (n/1e6).toFixed(1).replace('.0','')+'M';if(n>=1e3)return (n/1e3).toFixed(1).replace('.0','')+'k';return n||'—';}
+
+/* ---------- KPIs ---------- */
+function renderKpis(){
+  const by={};STATUSES.forEach(s=>by[s.k]=0);
+  candidates.forEach(c=>by[c.status]=(by[c.status]||0)+1);
+  const total=candidates.length;
+  const contacted=by.kontakt+by.antwort+by.call+by.signed;
+  const replied=by.antwort+by.call+by.signed;
+  const rr=contacted?Math.round(replied/contacted*100):0;
+  const el=document.getElementById('kpis');
+  el.innerHTML=`
+    <div class="kpi"><div class="n">${total}</div><div class="l">Kandidaten</div></div>
+    <div class="kpi"><div class="n">${contacted}</div><div class="l">Kontaktiert</div></div>
+    <div class="kpi acc"><div class="n">${rr}%</div><div class="l">Response</div></div>
+    <div class="kpi"><div class="n" style="color:var(--green)">${by.signed}</div><div class="l">Signed</div></div>`;
+}
+
+/* ---------- Board ---------- */
+function renderBoard(){
+  const b=document.getElementById('board');b.innerHTML='';
+  STATUSES.forEach(s=>{
+    const list=candidates.filter(c=>c.status===s.k).sort((a,b)=>computeScore(b)-computeScore(a));
+    const col=document.createElement('div');col.className='col';
+    col.innerHTML=`<div class="col-h"><div class="t"><span class="dot" style="background:${s.color}"></span>${s.label}</div><span class="c">${list.length}</span></div><div class="col-body" data-st="${s.k}"></div>`;
+    const body=col.querySelector('.col-body');
+    list.forEach(c=>body.appendChild(cardEl(c)));
+    body.addEventListener('dragover',e=>{e.preventDefault();body.classList.add('drag-over');});
+    body.addEventListener('dragleave',()=>body.classList.remove('drag-over'));
+    body.addEventListener('drop',e=>{e.preventDefault();body.classList.remove('drag-over');
+      const id=e.dataTransfer.getData('id');const c=candidates.find(x=>x.id===id);
+      if(c&&c.status!==s.k){c.status=s.k;saveAll();renderAll();toast(c.name+' → '+s.label);}});
+    b.appendChild(col);
+  });
+}
+function cardEl(c){
+  const s=computeScore(c);const p=c.platform||'other';
+  const d=document.createElement('div');d.className='card';d.draggable=true;
+  d.innerHTML=`<div class="c-top"><span class="nm">${esc(c.name||'—')}</span><span class="score" style="${scoreColor(s)}">${s}</span></div>
+    <div class="meta"><span class="pill ${p}">${platIcon(p)} ${platLabel(p)}</span>
+    <span>👥 ${fmtReach(c.reach)}</span>${c.language?`<span>${c.language.toUpperCase()}</span>`:''}
+    <span class="touchdots">${[1,2,3].map(i=>`<i class="${(+c.touch>=i)?'on':''}"></i>`).join('')}</span></div>`;
+  d.addEventListener('dragstart',e=>{e.dataTransfer.setData('id',c.id);d.classList.add('dragging');});
+  d.addEventListener('dragend',()=>d.classList.remove('dragging'));
+  d.addEventListener('click',()=>openModal(c.id));
+  return d;
+}
+function platIcon(p){return {telegram:'✈️',youtube:'▶️',instagram:'📸',web:'🌐',other:'•'}[p]||'•';}
+function platLabel(p){return {telegram:'Telegram',youtube:'YouTube',instagram:'Insta',web:'Web',other:'Andere'}[p]||p;}
+
+/* ---------- Table ---------- */
+function renderTable(){
+  const q=(document.getElementById('fSearch').value||'').toLowerCase();
+  const fp=document.getElementById('fPlatform').value, fs=document.getElementById('fStatus').value;
+  const fl=document.getElementById('fLang').value, fsc=+document.getElementById('fScore').value;
+  let rows=candidates.filter(c=>{
+    if(fp&&c.platform!==fp)return false;
+    if(fs&&c.status!==fs)return false;
+    if(fl&&c.language!==fl)return false;
+    if(fsc&&computeScore(c)<fsc)return false;
+    if(q){const hay=(c.name+' '+c.handle+' '+c.niche+' '+c.source).toLowerCase();if(!hay.includes(q))return false;}
+    return true;
+  });
+  rows.sort((a,b)=>{
+    let va,vb;
+    if(sortKey==='fit'){va=computeScore(a);vb=computeScore(b);}
+    else if(sortKey==='reach'){va=+a.reach||0;vb=+b.reach||0;}
+    else if(sortKey==='touch'){va=+a.touch||0;vb=+b.touch||0;}
+    else{va=(a[sortKey]||'').toString().toLowerCase();vb=(b[sortKey]||'').toString().toLowerCase();}
+    return va<vb?-sortDir:va>vb?sortDir:0;
+  });
+  const tb=document.getElementById('tblBody');tb.innerHTML='';
+  document.getElementById('tblEmpty').style.display=candidates.length?'none':'block';
+  rows.forEach(c=>{
+    const s=computeScore(c),st=statusOf(c.status);
+    const tr=document.createElement('tr');tr.onclick=()=>openModal(c.id);
+    tr.innerHTML=`<td><b>${esc(c.name||'—')}</b>${c.handle?`<div style="color:var(--mut);font-size:11px">${esc(c.handle)}</div>`:''}</td>
+      <td><span class="pill ${c.platform}">${platIcon(c.platform)} ${platLabel(c.platform)}</span></td>
+      <td>${fmtReach(c.reach)}</td><td>${(c.language||'').toUpperCase()}</td>
+      <td>${esc(c.niche||'—')}</td>
+      <td><span class="score" style="${scoreColor(s)}">${s}</span></td>
+      <td><span class="badge" style="background:${st.color}22;color:${st.color}">${st.label}</span></td>
+      <td><span class="touchdots">${[1,2,3].map(i=>`<i class="${(+c.touch>=i)?'on':''}"></i>`).join('')}</span></td>
+      <td style="color:var(--mut);font-size:12px">${esc(c.source||'—')}</td>`;
+    tb.appendChild(tr);
+  });
+}
+document.querySelectorAll('#tbl th').forEach(th=>th.addEventListener('click',()=>{
+  const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==='fit'||k==='reach'||k==='touch')?-1:1;}renderTable();
+}));
+
+/* ---------- Modal ---------- */
+function fillStatusSelects(){
+  const opts=STATUSES.map(s=>`<option value="${s.k}">${s.label}</option>`).join('');
+  document.getElementById('mStatus').innerHTML=opts;
+  document.getElementById('fStatus').innerHTML='<option value="">Alle Status</option>'+opts;
+  document.getElementById('mTmpl').innerHTML=templates.map(t=>`<option value="${t.id}">${esc(t.nm)} · ${t.lang} · T${t.touch}</option>`).join('');
+}
+function openModal(id){
+  editingId=id;const c=candidates.find(x=>x.id===id);if(!c)return;
+  document.getElementById('mTitle').textContent=c.name||'Kandidat';
+  const g=(k,d='')=>c[k]!==undefined&&c[k]!==null?c[k]:d;
+  set('mName',g('name'));set('mHandle',g('handle'));set('mPlatform',g('platform','telegram'));
+  set('mUrl',g('url'));set('mReach',g('reach'));set('mLang',g('language','de'));
+  set('mNiche',g('niche'));set('mNicheM',g('nicheMatch',70));set('mAct',g('activity','med'));
+  set('mMon',g('monetization','some'));set('mStatus',g('status','neu'));set('mTouch',g('touch',0));
+  set('mLink',g('customLink'));set('mDeal',g('deal'));set('mSource',g('source'));
+  set('mLast',g('lastContact'));set('mNotes',g('notes'));
+  updateOutPreview();
+  document.getElementById('ov').classList.add('show');
+}
+function set(id,v){document.getElementById(id).value=v;}
+function val(id){return document.getElementById(id).value;}
+function closeModal(){document.getElementById('ov').classList.remove('show');editingId=null;}
+function saveCandidate(){
+  const c=candidates.find(x=>x.id===editingId);if(!c)return;
+  c.name=val('mName');c.handle=val('mHandle');c.platform=val('mPlatform');c.url=val('mUrl');
+  c.reach=+val('mReach')||0;c.language=val('mLang');c.niche=val('mNiche');c.nicheMatch=+val('mNicheM')||0;
+  c.activity=val('mAct');c.monetization=val('mMon');c.status=val('mStatus');c.touch=Math.max(0,Math.min(3,+val('mTouch')||0));
+  c.customLink=val('mLink');c.deal=val('mDeal');c.source=val('mSource');c.lastContact=val('mLast');c.notes=val('mNotes');
+  saveAll();renderAll();closeModal();toast('Gespeichert');
+}
+function addCandidate(){
+  const c={id:uid(),name:'',handle:'',platform:'telegram',url:'',reach:0,language:'de',niche:'',
+    nicheMatch:70,activity:'med',monetization:'some',status:'neu',touch:0,customLink:'',deal:'',
+    source:'manuell',lastContact:'',notes:'',added:today()};
+  candidates.push(c);saveAll();openModal(c.id);switchView('cands');
+}
+function deleteCandidate(){
+  if(!editingId)return;if(!confirm('Kandidat wirklich löschen?'))return;
+  candidates=candidates.filter(c=>c.id!==editingId);saveAll();renderAll();closeModal();toast('Gelöscht');
+}
+['mTmpl'].forEach(id=>document.getElementById(id).addEventListener('change',updateOutPreview));
+
+/* ---------- Outreach merge ---------- */
+function mergeText(tpl,c){
+  const map={
+    '{name}':c.name||c.handle||'',
+    '{kanal}':c.name||c.handle||'',
+    '{reichweite}':fmtReach(c.reach),
+    '{hook}':c.niche||'',
+    '{deal}':c.deal||pitch.deal||'',
+    '{link}':c.customLink||pitch.deck||''
+  };
+  return tpl.replace(/\{name\}|\{kanal\}|\{reichweite\}|\{hook\}|\{deal\}|\{link\}/g,m=>map[m]??m);
+}
+function currentTemplate(){return templates.find(t=>t.id===val('mTmpl'));}
+function updateOutPreview(){
+  const c=candidates.find(x=>x.id===editingId),t=currentTemplate();
+  document.getElementById('outPrev').textContent=(c&&t)?mergeText(t.body,c):'';
+}
+function copyOutreach(){
+  const c=candidates.find(x=>x.id===editingId),t=currentTemplate();if(!c||!t)return;
+  navigator.clipboard.writeText(mergeText(t.body,c));
+  // auto-advance touch
+  const tt=Math.max(c.touch||0,t.touch);c.touch=Math.min(3,tt);
+  if(c.status==='neu'||c.status==='scored')c.status='kontakt';
+  c.lastContact=today();saveAll();set('mTouch',c.touch);set('mStatus',c.status);renderKpis();renderBoard();
+  toast('Nachricht kopiert · Touch '+t.touch);
+}
+function openChannel(){
+  const c=candidates.find(x=>x.id===editingId);if(!c)return;
+  let url=c.url||'';
+  if(!url&&c.handle&&c.platform==='telegram')url='https://t.me/'+c.handle.replace(/^@/,'');
+  if(!url){toast('Keine URL hinterlegt');return;}
+  window.open(url,'_blank');
+}
+
+/* ---------- Weights ---------- */
+function renderWeights(){
+  const defs=[['reach','Reichweite'],['niche','Nischen-Match'],['language','Sprache'],['activity','Aktivität'],['monetization','Monetarisierung']];
+  document.getElementById('weights').innerHTML=defs.map(([k,l])=>
+    `<div class="wrow"><label>${l}</label><input type="range" min="0" max="50" value="${weights[k]}" oninput="weights.${k}=+this.value;this.nextElementSibling.textContent=this.value;liveScore()"><span class="v">${weights[k]}</span></div>`).join('');
+}
+function liveScore(){renderKpis();/* board/table recompute on view switch */}
+function saveWeights(){save(LS.w,weights);renderAll();toast('Gewichte gespeichert');}
+function resetWeights(){weights={...DEFAULT_WEIGHTS};save(LS.w,weights);renderWeights();renderAll();toast('Standard wiederhergestellt');}
+
+/* ---------- Playbook ---------- */
+function renderTemplates(){
+  const wrap=document.getElementById('templates');wrap.innerHTML='';
+  templates.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='tmpl';
+    d.innerHTML=`<div class="tmpl-h">
+      <input type="text" value="${esc(t.nm)}" style="flex:1;min-width:160px" onchange="templates[${i}].nm=this.value;saveTpl()">
+      <input type="text" value="${esc(t.profile||'')}" placeholder="Profil" style="width:130px" onchange="templates[${i}].profile=this.value;saveTpl()">
+      <input type="text" value="${esc(t.channel||'')}" placeholder="Kanal" style="width:120px" onchange="templates[${i}].channel=this.value;saveTpl()">
+      <select onchange="templates[${i}].lang=this.value;saveTpl();fillStatusSelects()"><option ${t.lang==='DE'?'selected':''}>DE</option><option ${t.lang==='EN'?'selected':''}>EN</option><option ${t.lang==='ML'?'selected':''}>ML</option></select>
+      <select onchange="templates[${i}].touch=+this.value;saveTpl();fillStatusSelects()">${[1,2,3].map(n=>`<option value="${n}" ${t.touch===n?'selected':''}>Touch ${n}</option>`).join('')}</select>
+      <button class="btn danger sm" onclick="delTemplate('${t.id}')">🗑</button></div>
+      <textarea onchange="templates[${i}].body=this.value;saveTpl()">${esc(t.body)}</textarea>`;
+    wrap.appendChild(d);
+  });
+}
+function saveTpl(){save(LS.tmpl,templates);fillStatusSelects();}
+function addTemplate(){templates.push({id:'t'+Math.random().toString(36).slice(2,7),nm:'Neue Vorlage',profile:'',channel:'',lang:'DE',touch:1,body:'Hey {name} …'});saveTpl();renderTemplates();}
+function delTemplate(id){if(!confirm('Vorlage löschen?'))return;templates=templates.filter(t=>t.id!==id);saveTpl();renderTemplates();}
+
+/* ---------- Pitch ---------- */
+function renderPitch(){set('pDeal',pitch.deal);set('pDeck',pitch.deck);set('pBody',pitch.body);}
+function savePitch(){pitch.deal=val('pDeal');pitch.deck=val('pDeck');pitch.body=val('pBody');save(LS.pitch,pitch);toast('Pitch gespeichert');}
+function copyPitch(){const t=pitch.body.replace(/\{deal\}/g,pitch.deal).replace(/\{link\}/g,pitch.deck);navigator.clipboard.writeText(t);toast('One-Pager kopiert');}
+
+/* ---------- Import / Export ---------- */
+const FIELDS=['name','handle','platform','url','reach','language','niche','nicheMatch','activity','monetization','status','touch','customLink','deal','source','lastContact','notes'];
+function exportData(fmt){
+  if(fmt==='json'){
+    const blob={_meta:{...APP,exported:new Date().toISOString()},candidates,weights,pitch,templates};
+    dl('partnerscout_export_'+today()+'.json',JSON.stringify(blob,null,2));
+  }else{
+    const head=['name','handle','platform','url','reach','language','niche','nicheMatch','activity','monetization','status','touch','fit','customLink','deal','source','lastContact','notes'];
+    const lines=[head.join(',')];
+    candidates.forEach(c=>{const fit=computeScore(c);lines.push(head.map(h=>csvCell(h==='fit'?fit:c[h])).join(','));});
+    dl('partnerscout_candidates_'+today()+'.csv',lines.join('\n'));
+  }
+  toast('Export erstellt');
+}
+function csvCell(v){v=(v==null?'':''+v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function dl(name,content){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:'text/plain'}));a.download=name;a.click();}
+
+function importData(text,fname){
+  let added=0,updated=0;
+  try{
+    if(fname.endsWith('.json')||text.trim().startsWith('{')||text.trim().startsWith('[')){
+      const j=JSON.parse(text);
+      const arr=Array.isArray(j)?j:(j.candidates||[]);
+      if(j.weights&&!Array.isArray(j)){weights={...DEFAULT_WEIGHTS,...j.weights};save(LS.w,weights);}
+      if(j.pitch&&!Array.isArray(j)){pitch={...pitch,...j.pitch};save(LS.pitch,pitch);}
+      if(j.templates&&!Array.isArray(j)&&confirm('Playbook-Vorlagen aus Datei übernehmen (ersetzt aktuelle)?')){templates=j.templates;saveTpl();}
+      arr.forEach(r=>{const res=upsert(r);res==='add'?added++:updated++;});
+    }else{
+      const rows=parseCSV(text);const head=rows.shift().map(h=>h.trim());
+      rows.forEach(cols=>{if(!cols.length||!cols.join(''))return;const o={};head.forEach((h,i)=>o[h]=cols[i]);const res=upsert(o);res==='add'?added++:updated++;});
+    }
+    saveAll();renderAll();renderWeights();renderPitch();renderTemplates();
+    toast(`Import: ${added} neu, ${updated} aktualisiert`);
+  }catch(e){toast('Import-Fehler: '+e.message);console.error(e);}
+}
+function norm(o){
+  const c={};FIELDS.forEach(f=>{if(o[f]!==undefined&&o[f]!=='')c[f]=o[f];});
+  c.reach=+c.reach||0;c.nicheMatch=c.nicheMatch!==undefined?+c.nicheMatch:70;c.touch=+c.touch||0;
+  c.platform=(c.platform||'telegram').toLowerCase();c.language=(c.language||'de').toLowerCase();
+  c.activity=(c.activity||'med');c.monetization=(c.monetization||'some');
+  if(!STATUSES.some(s=>s.k===c.status))c.status='neu';
+  return c;
+}
+function dedupKey(c){return ((c.url||'')+'|'+(c.handle||'')+'|'+(c.name||'')).toLowerCase().replace(/\s+/g,'');}
+function upsert(raw){
+  const c=norm(raw);const key=dedupKey(c);
+  const ex=candidates.find(x=>dedupKey(x)===key&&key.replace(/\|/g,''));
+  if(ex){Object.assign(ex,c);return 'upd';}
+  c.id=uid();c.added=today();candidates.push(c);return 'add';
+}
+function parseCSV(text){
+  const rows=[];let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
+    else{if(ch==='"')q=true;else if(ch===','){row.push(cur);cur='';}
+      else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cur);rows.push(row);row=[];cur='';}
+      else cur+=ch;}
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows.filter(r=>r.length>1||r[0]!=='');
+}
+
+/* drag&drop */
+let dragDepth=0;
+window.addEventListener('dragenter',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){dragDepth++;document.getElementById('drop').classList.add('show');}});
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('dragleave',e=>{dragDepth--;if(dragDepth<=0)document.getElementById('drop').classList.remove('show');});
+window.addEventListener('drop',e=>{e.preventDefault();dragDepth=0;document.getElementById('drop').classList.remove('show');
+  const f=e.dataTransfer.files[0];if(!f)return;const r=new FileReader();r.onload=()=>importData(r.result,f.name.toLowerCase());r.readAsText(f);});
+
+/* ---------- helpers / nav ---------- */
+function esc(s){return (s==null?'':''+s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function today(){return new Date().toISOString().slice(0,10);}
+function switchView(v){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
+  if(v==='board')renderBoard();if(v==='cands')renderTable();if(v==='score')renderWeights();
+  if(v==='play')renderTemplates();if(v==='pitch')renderPitch();
+}
+document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.v)));
+document.getElementById('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeModal();});
+
+function renderAll(){renderKpis();renderBoard();renderTable();}
+
+/* ---------- init ---------- */
+function init(){
+  document.getElementById('verFoot').textContent=PARTNERSCOUT_VERSION;
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  fillStatusSelects();renderAll();renderWeights();renderPitch();renderTemplates();
+}
+init();
+</script>
+</body>
+</html>
